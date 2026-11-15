@@ -1,0 +1,459 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pink Calculator</title>
+
+<!-- jQuery를 먼저 불러오기 -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: #fff0f6;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+/* 계산기 본체 */
+#calc {
+    width: 300px;
+    padding: 15px;
+    background: linear-gradient(145deg, #ff85b5, #e92e83);
+    border: 4px solid #d92776;
+    border-radius: 28px;
+    box-shadow: 8px 10px 15px rgba(150,40,90,0.3),
+                inset 2px 2px 5px #ffc2dc;
+}
+
+h2 {
+    color: white;
+    font-size: 20px;
+    margin: 3px 0 12px 5px;
+    letter-spacing: 1px;
+}
+
+#memory {
+    height: 15px;
+    text-align: right;
+    color: white;
+    font-size: 11px;
+}
+
+/* 화면 */
+#screen {
+    background: #d9e2d7;
+    border: 4px solid #a62b62;
+    border-radius: 9px;
+    height: 75px;
+    margin-bottom: 13px;
+    padding: 7px 10px;
+    box-shadow: inset 2px 3px 5px #87958a;
+    overflow: hidden;
+}
+
+#expression {
+    height: 20px;
+    text-align: right;
+    font-size: 13px;
+    color: #647064;
+    white-space: nowrap;
+}
+
+#display {
+    width: 100%;
+    height: 35px;
+    border: none;
+    background: transparent;
+    text-align: right;
+    font-size: 28px;
+    color: #252b27;
+    outline: none;
+    font-weight: bold;
+}
+
+/* 버튼 */
+#buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+button {
+    height: 43px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #ffacd0, #f65b9e);
+    color: white;
+    font-size: 19px;
+    font-weight: bold;
+    box-shadow: 2px 3px 4px #a92762,
+                inset 1px 1px 3px #ffd5e7;
+    cursor: pointer;
+}
+
+button:active {
+    transform: translateY(3px);
+    box-shadow: inset 2px 3px 5px #ad3168;
+}
+
+.function {
+    background: linear-gradient(145deg, #d94387, #a91f60);
+    font-size: 15px;
+}
+
+.operator {
+    background: linear-gradient(145deg, #ff8fc0, #dc2675);
+}
+
+.equal {
+    background: linear-gradient(145deg, #b82d71, #86134c);
+}
+
+.zero {
+    grid-column: span 2;
+}
+</style>
+</head>
+
+<body>
+
+<div id="calc">
+
+    <h2>CASIO</h2>
+
+    <div id="memory"></div>
+
+    <div id="screen">
+        <div id="expression"></div>
+        <input type="text" id="display" value="0" readonly>
+    </div>
+
+    <div id="buttons">
+
+        <button class="function" data-action="mc">MC</button>
+        <button class="function" data-action="mr">MR</button>
+        <button class="function" data-action="mminus">M-</button>
+        <button class="function" data-action="mplus">M+</button>
+
+        <button class="function" data-action="clear">AC</button>
+        <button class="function" data-action="backspace">C</button>
+        <button class="function" data-action="percent">%</button>
+        <button class="operator" data-op="÷">÷</button>
+
+        <button data-number="7">7</button>
+        <button data-number="8">8</button>
+        <button data-number="9">9</button>
+        <button class="operator" data-op="×">×</button>
+
+        <button data-number="4">4</button>
+        <button data-number="5">5</button>
+        <button data-number="6">6</button>
+        <button class="operator" data-op="-">−</button>
+
+        <button data-number="1">1</button>
+        <button data-number="2">2</button>
+        <button data-number="3">3</button>
+        <button class="operator" data-op="+">+</button>
+
+        <button class="function" data-action="sign">+/-</button>
+        <button class="zero" data-number="0">0</button>
+        <button data-action="decimal">.</button>
+        <button class="equal" data-action="equal">=</button>
+
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    let current = "0";
+    let previous = null;
+    let operator = null;
+    let waiting = false;
+
+    let memory = 0;
+
+    // 연속 = 계산을 위한 변수
+    let lastOperator = null;
+    let lastOperand = null;
+
+    const display = $("#display");
+    const expression = $("#expression");
+
+    // 화면 출력
+    function updateDisplay(){
+        display.val(current);
+    }
+
+    // 숫자 입력
+    $("[data-number]").click(function(){
+
+        let num = String($(this).data("number"));
+
+        if(current === "오류"){
+            current = num;
+            waiting = false;
+        }
+        else if(waiting){
+            current = num;
+            waiting = false;
+        }
+        else if(current === "0"){
+            current = num;
+        }
+        else if(current === "-0"){
+            current = "-" + num;
+        }
+        else if(current.length < 15){
+            current += num;
+        }
+
+        updateDisplay();
+    });
+
+    // 소수점 입력
+    $("[data-action='decimal']").click(function(){
+
+        if(current === "오류") return;
+
+        if(waiting){
+            current = "0";
+            waiting = false;
+        }
+
+        if(!current.includes(".")){
+            current += ".";
+        }
+
+        updateDisplay();
+    });
+
+    // 실제 계산
+    function calculate(a, b, op){
+
+        switch(op){
+
+            case "+":
+                return a + b;
+
+            case "-":
+                return a - b;
+
+            case "×":
+                return a * b;
+
+            case "÷":
+                if(b === 0) return null;
+                return a / b;
+        }
+    }
+
+    // 계산 결과 정리
+    function formatResult(result){
+
+        if(!Number.isFinite(result)){
+            return "오류";
+        }
+
+        return String(Number(result.toPrecision(12)));
+    }
+
+    // 연산자 버튼
+    $("[data-op]").click(function(){
+
+        if(current === "오류") return;
+
+        let nextOp = $(this).data("op");
+
+        // 연산자만 연속으로 누른 경우
+        if(waiting && operator !== null){
+            operator = nextOp;
+            expression.text(previous + " " + operator);
+            return;
+        }
+
+        // 이전 연산이 있으면 먼저 계산
+        if(operator !== null && previous !== null){
+
+            let result = calculate(
+                Number(previous),
+                Number(current),
+                operator
+            );
+
+            if(result === null){
+                current = "오류";
+                previous = null;
+                operator = null;
+                updateDisplay();
+                expression.text("0으로 나눌 수 없습니다");
+                return;
+            }
+
+            current = formatResult(result);
+            updateDisplay();
+        }
+
+        previous = current;
+        operator = nextOp;
+        waiting = true;
+
+        lastOperator = null;
+        lastOperand = null;
+
+        expression.text(previous + " " + operator);
+    });
+
+    // = 버튼
+    $("[data-action='equal']").click(function(){
+
+        if(current === "오류") return;
+
+        let a, b, op;
+
+        if(operator !== null && previous !== null && !waiting){
+
+            a = Number(previous);
+            b = Number(current);
+            op = operator;
+
+            lastOperator = op;
+            lastOperand = b;
+
+        }
+        else if(lastOperator !== null){
+
+            // = 버튼을 다시 누르면 이전 계산 반복
+            a = Number(current);
+            b = lastOperand;
+            op = lastOperator;
+
+        }
+        else{
+            return;
+        }
+
+        let result = calculate(a, b, op);
+
+        if(result === null){
+            current = "오류";
+            expression.text("0으로 나눌 수 없습니다");
+        }
+        else{
+            expression.text(a + " " + op + " " + b + " =");
+            current = formatResult(result);
+        }
+
+        previous = null;
+        operator = null;
+        waiting = true;
+
+        updateDisplay();
+    });
+
+    // AC 전체 초기화
+    $("[data-action='clear']").click(function(){
+
+        current = "0";
+        previous = null;
+        operator = null;
+        waiting = false;
+
+        lastOperator = null;
+        lastOperand = null;
+
+        expression.text("");
+        updateDisplay();
+    });
+
+    // C 마지막 숫자 삭제
+    $("[data-action='backspace']").click(function(){
+
+        if(current === "오류") return;
+
+        if(waiting) return;
+
+        if(current.length > 1){
+            current = current.slice(0, -1);
+
+            if(current === "-"){
+                current = "0";
+            }
+        }
+        else{
+            current = "0";
+        }
+
+        updateDisplay();
+    });
+
+    // 양수 / 음수 전환
+    $("[data-action='sign']").click(function(){
+
+        if(current === "오류" || Number(current) === 0) return;
+
+        current = String(Number(current) * -1);
+
+        updateDisplay();
+    });
+
+    // 백분율
+    $("[data-action='percent']").click(function(){
+
+        if(current === "오류") return;
+
+        current = formatResult(Number(current) / 100);
+
+        waiting = false;
+        updateDisplay();
+    });
+
+    // 메모리에 더하기
+    $("[data-action='mplus']").click(function(){
+
+        if(current === "오류") return;
+
+        memory += Number(current);
+        $("#memory").text("M");
+    });
+
+    // 메모리에서 빼기
+    $("[data-action='mminus']").click(function(){
+
+        if(current === "오류") return;
+
+        memory -= Number(current);
+        $("#memory").text("M");
+    });
+
+    // 메모리 불러오기
+    $("[data-action='mr']").click(function(){
+
+        current = String(memory);
+        waiting = true;
+
+        updateDisplay();
+    });
+
+    // 메모리 초기화
+    $("[data-action='mc']").click(function(){
+
+        memory = 0;
+        $("#memory").text("");
+    });
+
+});
+</script>
+
+</body>
+</html>
