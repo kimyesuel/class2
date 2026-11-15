@@ -1,80 +1,137 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=>, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-</head>
 
-<style>
-    h1 {text-align:center;}
-    .disp {width:205px; height:40px; margin-top:3px;}
-    .disp{text-align: right; font-family:"0xanium", san-serif; font-size:22pt;}
-    input[type=button]{width:50px; height:50px; margin-top:5px; text-align: center; vertical-align:middle;}
-    #calc {width:220px; margin-left : auto; margin-right:auto;}
+    <style>
+        h1 {text-align:center;}
+        .disp {
+            width:205px;
+            height:40px;
+            margin-top:3px;
+            text-align:right;
+            font-family:sans-serif;
+            font-size:22pt;
+        }
+        input[type=button] {
+            width:50px;
+            height:50px;
+            margin-top:5px;
+            text-align:center;
+            vertical-align:middle;
+        }
+        #calc {
+            width:220px;
+            margin-left:auto;
+            margin-right:auto;
+        }
     </style>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js" intergrity=" sha256-d4LwM9D6pTkixVQVP66nz3BYd8ri7Uriz7C3X4qBAVE=" crossorigin="anonymous"></script>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-<script>
-
+    <script>
     $(document).ready(function(){
+
+        // 숫자 버튼
         $(".num").click(function(){
             let cur = $("#disp2").val();
             let n = $(this).val();
+
             $("#disp2").val(cur+n);
         });
+
+        // 연산자 및 = 버튼
         $(".op").click(function(){
             let cur = $("#disp2").val();
             let n = $(this).val();
-            if(n!=="="){
-            $("#disp2").val(cur+n);
+
+            if(n !== "="){
+                $("#disp2").val(cur+n);
             }
             else{
-                let result = eval(cur);
-                $("#disp1").val(cur);
-                $("#disp2").val(result);
+                let exp = cur;
 
+                // 연산자 기준으로 숫자 분리
+                let op = "";
+                let idx = -1;
+
+                for(let i=0; i<exp.length; i++){
+                    if(exp[i] === "+" || exp[i] === "-" ||
+                       exp[i] === "*" || exp[i] === "/"){
+                        op = exp[i];
+                        idx = i;
+                        break;
+                    }
+                }
+
+                if(idx !== -1){
+                    let num1 = Number(exp.substring(0,idx));
+                    let num2 = Number(exp.substring(idx+1));
+                    let result;
+
+                    // 연산자에 따른 계산
+                    switch(op){
+                        case "+":
+                            result = num1 + num2;
+                            break;
+                        case "-":
+                            result = num1 - num2;
+                            break;
+                        case "*":
+                            result = num1 * num2;
+                            break;
+                        case "/":
+                            result = num2 === 0 ? "오류" : num1 / num2;
+                            break;
+                    }
+
+                    $("#disp1").val(cur);
+                    $("#disp2").val(result);
+                }
             }
-
-            
-
         });
+
+        // AC 버튼 : 전체 초기화
+        $(".func").click(function(){
+            $("#disp1").val("");
+            $("#disp2").val("");
+        });
+
     });
     </script>
+</head>
 
 <body>
-    <h1> 계산기 </h1>
+    <h1>계산기</h1>
+
     <div id="calc">
         <div>
             <input type="text" class="disp" id="disp1" readonly>
-             <input type="text" class="disp" id="disp2" readonly>
-             </div>
+            <input type="text" class="disp" id="disp2" readonly>
+        </div>
 
-             <input type="button" class="num" value="7">
-             <input type="button" class="num" value="8">
-            <input type="button" class="num" value="9">
-             <input type="button" class="op" value="+"><br>
-              <input type="button" class="num" value="4">
-               <input type="button" class="num" value="5">
-               <input type="button" class="num" value="6">
-               <input type="button" class="op" value="-"><br>
-               <input type="button" class="num" value="1">
-               <input type="button" class="num" value="2">
-               <input type="button" class="num" value="3">
-               <input type="button" class="op" value="*"><br>
-               <input type="button" class="func" value="ac"
-               
+        <input type="button" class="num" value="7">
+        <input type="button" class="num" value="8">
+        <input type="button" class="num" value="9">
+        <input type="button" class="op" value="+"><br>
 
-<input type="button" class="num" value="3">
-               <input type="button" class="num" value="0">
-               <input type="button" class="op" value="=">
-               <input type="button" class="op" value="/">
-               </div>
-            </body>
-    
-               
+        <input type="button" class="num" value="4">
+        <input type="button" class="num" value="5">
+        <input type="button" class="num" value="6">
+        <input type="button" class="op" value="-"><br>
 
+        <input type="button" class="num" value="1">
+        <input type="button" class="num" value="2">
+        <input type="button" class="num" value="3">
+        <input type="button" class="op" value="*"><br>
+
+        <input type="button" class="func" value="AC">
+        <input type="button" class="num" value="0">
+        <input type="button" class="op" value="=">
+        <input type="button" class="op" value="/">
+    </div>
 </body>
- 
 </html>
